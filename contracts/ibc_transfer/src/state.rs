@@ -8,6 +8,7 @@ pub const IBC_SUDO_ID_RANGE_SIZE: u64 = 1_000;
 pub const IBC_SUDO_ID_RANGE_END: u64 = IBC_SUDO_ID_RANGE_START + IBC_SUDO_ID_RANGE_SIZE;
 
 pub const REPLY_QUEUE_ID: Map<u64, Vec<u8>> = Map::new("reply_queue_id");
+pub const CURRENT_SUB_MSG_ID: Item<u64> = Item::new("current_sub_msg_id");
 
 const REPLY_ID: Item<u64> = Item::new("reply_id");
 

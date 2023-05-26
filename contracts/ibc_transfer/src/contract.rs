@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     coin, entry_point, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdError, StdResult, SubMsg,
+    StdError, StdResult, SubMsg, to_binary,
 };
 use cw2::set_contract_version;
 use neutron_sdk::{
@@ -16,10 +16,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg},
+    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
     state::{
         read_reply_payload, read_sudo_payload, save_reply_payload, save_sudo_payload,
-        IBC_SUDO_ID_RANGE_END, IBC_SUDO_ID_RANGE_START,
+        IBC_SUDO_ID_RANGE_END, IBC_SUDO_ID_RANGE_START, CURRENT_SUB_MSG_ID
     },
 };
 
@@ -159,7 +159,7 @@ fn execute_send(
         receiver: to.clone(),
         token: coin1,
         timeout_height: RequestPacketTimeoutHeight {
-            revision_number: Some(2),
+            revision_number: Some(11),
             revision_height: timeout_height.or(Some(DEFAULT_TIMEOUT_HEIGHT)),
         },
         timeout_timestamp: 0,
@@ -174,7 +174,7 @@ fn execute_send(
         receiver: to,
         token: coin2,
         timeout_height: RequestPacketTimeoutHeight {
-            revision_number: Some(2),
+            revision_number: Some(11),
             revision_height: timeout_height.or(Some(DEFAULT_TIMEOUT_HEIGHT)),
         },
         timeout_timestamp: 0,
@@ -209,6 +209,14 @@ fn execute_send(
 
 #[entry_point]
 pub fn sudo(deps: DepsMut, _env: Env, msg: TransferSudoMsg) -> StdResult<Response> {
+
+    let ack_sub_id = 100u64;
+    CURRENT_SUB_MSG_ID.save(deps.storage, &ack_sub_id)?;
+    return Ok(Response::new()
+        .add_attribute("action", "sudo")
+        .add_attribute("test_sudo", "we made it")
+        .add_attribute("msg", "ack"));
+    /*
     match msg {
         // For handling successful (non-error) acknowledgements
         TransferSudoMsg::Response { request, data } => sudo_response(deps, request, data),
@@ -219,6 +227,7 @@ pub fn sudo(deps: DepsMut, _env: Env, msg: TransferSudoMsg) -> StdResult<Respons
         // For handling error timeouts
         TransferSudoMsg::Timeout { request } => sudo_timeout(deps, request),
     }
+    */
 }
 
 fn sudo_error(deps: DepsMut, req: RequestPacket, data: String) -> StdResult<Response> {
@@ -291,3 +300,21 @@ fn min_ntrn_ibc_fee(fee: IbcFee) -> IbcFee {
             .collect(),
     }
 }
+
+#[entry_point]
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetCurrentSubMsgId {} => {
+            to_binary(&query_get_current_sub_msg_id(deps)?)
+        }
+    }
+}
+
+fn query_get_current_sub_msg_id(deps: Deps) -> StdResult<u64> {
+    let current_sub_msg_id = match CURRENT_SUB_MSG_ID.may_load(deps.storage)? {
+        Some(id) => id,
+        None => 0,
+    };
+    Ok(current_sub_msg_id)
+}
+

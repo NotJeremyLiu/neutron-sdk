@@ -18,3 +18,8 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct MigrateMsg {}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub enum QueryMsg {
+    GetCurrentSubMsgId {},
+}
